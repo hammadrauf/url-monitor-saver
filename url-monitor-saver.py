@@ -1,15 +1,12 @@
 #!/usr/bin/python3
 # https://pyinstaller.org/en/stable/spec-files.html#using-spec-files
 ## Install
-# - pip install pyyaml, pywin32, pygame
+# - pip install pyyaml, pywin32
 # - pip install pywebview, pynput
 #
 import threading
 from pynput import keyboard, mouse
 import time
-#
-#import argparse
-#from argparse import RawDescriptionHelpFormatter
 import os
 import sys
 import yaml
@@ -28,7 +25,6 @@ elif __file__:
 
 config_file_path = os.path.join(application_path, config_file_name)
 
-#parser = argparse.ArgumentParser(description='''\
 '''
 Author: Hammad Rauf (rauf.hammad@gmail.com)
 License: MIT (Open Source, Free)
@@ -115,7 +111,6 @@ authenticated_url = base_url+generate_auth_hash(False)
 
 # Event to control the main loop and listeners
 terminate_event = threading.Event()
-
 
 def destroy(window, timeInSec):
     for _ in range(timeInSec):
