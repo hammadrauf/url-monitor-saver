@@ -29,6 +29,10 @@ MIT (Open Source, Free)
   frame_height: 1000
   screenoff_enabled: False 
 ```
+## Pre-requisites
+Python3 should be installed. Then you will also need to install the following using pip:
+- pip install pyyaml, pywin32
+- pip install pywebview, pynput
 
 ## Use PyInstaller to Make EXE
 PyInstaller Link: [https://pyinstaller.org/en/stable/operating-mode.html](https://pyinstaller.org/en/stable/operating-mode.html)
