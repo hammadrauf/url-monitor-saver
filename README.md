@@ -27,3 +27,13 @@ MIT (Open Source, Free)
   frame_height: 1000
   screenoff_enabled: False 
 ```
+
+## Use PyInstaller to Make EXE
+PyInstaller Link: [https://pyinstaller.org/en/stable/operating-mode.html](https://pyinstaller.org/en/stable/operating-mode.html)
+```
+pip install pyinstaller
+pyintaller --onefile --windowed url-monitor-saver.py
+```
+
+## Convert to Screen Saver (Not perfect)
+Rename the .exe file to .scr. Then right click on it and Install. Some Specific Windows behavior like screen saver settings is missing.
