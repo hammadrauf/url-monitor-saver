@@ -4,7 +4,7 @@ and turning back on again. The URL and intervals for Screen-ON and Screen-Off ar
 given in as YAML text config file. This YAML file should be in the same folder as the executable
 file.
   
-ZoneMinder article: {https://techbit.ca/2018/11/logging-into-zoneminder-using-an-authentication-hash/}(https://techbit.ca/2018/11/logging-into-zoneminder-using-an-authentication-hash/)
+ZoneMinder article: [https://techbit.ca/2018/11/logging-into-zoneminder-using-an-authentication-hash/](https://techbit.ca/2018/11/logging-into-zoneminder-using-an-authentication-hash/)
   
 screen_Off function is only for Windows based computers.
 
