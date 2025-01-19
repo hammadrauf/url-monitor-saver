@@ -11,6 +11,8 @@ screen_Off function is only for Windows based computers.
 ## Author
 Hammad Rauf (rauf.hammad@gmail.com)
 
+## Article
+Article about this monitor-saver: [https://andromedabay.ddns.net/zoneminder-screen-saver/](https://andromedabay.ddns.net/zoneminder-screen-saver/)
 ## License
 MIT (Open Source, Free)
 
