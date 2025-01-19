@@ -1,0 +1,10 @@
+---
+  domain: "zoneminder.xyz.com"
+  secret_key: "XXX"
+  username: "YYY"
+  password_hash: "ZZZ"
+  seconds_off: 5
+  seconds_on: 8
+  frame_width: 1024
+  frame_height: 1000
+  screenoff_enabled: True
