@@ -15,7 +15,7 @@ Hammad Rauf (rauf.hammad@gmail.com)
 MIT (Open Source, Free)
 
 ## Sample YAML file contents
-'''
+```
 ---
   domain: "zoneminder.xyz.com"
   secret_key: "SomeRandomSecretKey-FromZoneMinder-Options"
@@ -26,4 +26,4 @@ MIT (Open Source, Free)
   frame_width: 1024
   frame_height: 1000
   screenoff_enabled: False 
-'''
+```
