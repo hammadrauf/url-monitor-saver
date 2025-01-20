@@ -16,7 +16,7 @@ Article about this monitor-saver: [https://andromedabay.ddns.net/zoneminder-scre
 ## License
 MIT (Open Source, Free)
 
-## Sample YAML file contents
+## Sample Config (YAML) file contents
 ```
 ---
   domain: "zoneminder.xyz.com"
@@ -27,8 +27,13 @@ MIT (Open Source, Free)
   seconds_on: 8
   frame_width: 1024
   frame_height: 1000
-  screenoff_enabled: False 
+  screenoff_enabled: False
+  speed_x: 90
+  speed_y: 60
 ```
+## Config file name and location
+There should a text file named "config-url-monitor-saver.yml" in the folder the python, executable, or .scr file is installed/saved. The contents of this Yaml file can be like the one shown in sampkle above.
+  
 ## Pre-requisites
 Python3 should be installed. Then you will also need to install the following using pip:
 - pip install pyyaml, pywin32
