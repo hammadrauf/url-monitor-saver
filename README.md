@@ -41,5 +41,5 @@ pip install pyinstaller
 pyintaller --onefile --windowed url-monitor-saver.py
 ```
 
-## Convert to Screen Saver (Not perfect)
-Rename the .exe file to .scr. Then right click on it and Install. Some Specific Windows behavior like screen saver settings is missing.
+## Convert to Screen Saver
+Rename the .exe file to .scr. Then right click on it and Install. Some Specific Windows behavior like screen saver settings is not implemented.
