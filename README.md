@@ -50,4 +50,4 @@ pyintaller --onefile --windowed url-monitor-saver.py
 Rename the .exe file to .scr. Then right click on it and Install. Some Specific Windows behavior like screen saver settings is not implemented.
 
 ## Screen Saver Video
-[![Watch the video](https://img.youtube.com/vi/0OwXKH7XfvY/hqdefault.jpg)](https://www.youtube.com/embed/0OwXKH7XfvY)
+[![Watch the video](https://img.youtube.com/vi/0OwXKH7XfvY/hqdefault.jpg)](https://www.youtube.com/watch?v=0OwXKH7XfvY)
