@@ -1,5 +1,5 @@
 # Url-monitor-saver
-Monitors a URL in Default Browser and Act As a Screen saver turning off monitor frequently
+Monitors a URL in python Browser and Act As a Screen saver turning off monitor frequently
 and turning back on again. The URL and intervals for Screen-ON and Screen-Off are to be
 given in as YAML text config file. This YAML file should be in the same folder as the executable
 file.
