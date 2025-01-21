@@ -10,3 +10,18 @@
   screenoff_enabled: False
   speed_x: 90
   speed_y: 60
+  screens:
+    - id: 0
+      placements:
+        - neighbour: 1
+          position: "Left"
+        - neighbour: 2
+          position: "Top"
+    - id: 1
+      placements:
+        - neighbour: 0
+          position: "Right"
+    - id: 2
+      placements:
+        - neighbour: 0
+          position: "Bottom"  

@@ -51,21 +51,26 @@ Sample YAML file contents:
   frame_height: 1000
   screenoff_enabled: False                                                     
 '''
-#Frame starting position
-winx = 0
-winy = 0
 
 config={}
 try:   
     with open(config_file_path) as stream:
         try:
             config=yaml.safe_load(stream)
+            #print(f"config data = {config['screens']}")
         except yaml.YAMLError as exc:
             print(exc)
 except:
     print(f"Config file not found at location: {config_file_path}")
     sys.exit(1)
 
+# Function to get the dictionary with the given 'id'
+def get_dict_by_id(data, n):
+    return next((item for item in data if item["id"] == n), None)
+
+print(f"Webview screens = {webview.screens}")
+for s in webview.screens:
+    print(f"Webview frames = {s.frame}")
 domain=config['domain']
 #base_url = f"https://{domain}/index.php?view=watch&mid=1&auth="
 base_url=f"https://{domain}/index.php?view=montage&group=1&scale=0.5&auth="
@@ -79,6 +84,17 @@ frame_height = config['frame_height']
 screenoff_enabled = config['screenoff_enabled']
 speed_x = config['speed_x']
 speed_y = config['speed_y']
+screens = []
+screens.append( { 'id' : 0, 'X': 0, 'Y': 0, 'Width': 1920, 'Height': 1032 } )
+if config['screens']:
+    screens = config['screens']
+print(f"screens = {screens}")
+cScreen = get_dict_by_id(screens, 0)   # Current Screen, default is None, for the Default screen.
+cScreen_changed = True
+
+#Frame starting position
+winx = cScreen['X']
+winy = cScreen['Y']
 
 def generate_auth_hash(use_remote_addr, uname=username, pwd_hash=password_hash, remote_address=domain, zm_auth_secret=secret_key):
     current_time = time.localtime()
@@ -122,15 +138,59 @@ authenticated_url = base_url+generate_auth_hash(False)
 terminate_event = threading.Event()
 
 def destroy(window, timeInSec):
-    global speed_x, speed_y, winx, winy, rtick, tick
+    global speed_x, speed_y, winx, winy, rtick, tick, cScreen, screens, cScreen_changed
+    cScreen_changed = True
+    # top=None
+    # bottom=None
+    # right=None
+    # left=None
     for _ in range(timeInSec*tick):
-        if terminate_event.is_set():
-            break
         time.sleep(rtick)
-        if winx + frame_width > webview.screens[0].width or winx < 0:
-            speed_x = speed_x * -1
-        if winy + frame_height > webview.screens[0].height or winy < 0:
-            speed_y = speed_y * -1
+        if terminate_event.is_set():
+            break           
+        if cScreen_changed:
+            cScreen_changed=False
+            top=None
+            bottom=None
+            right=None
+            left=None
+            for p in cScreen['placements']:
+                if p['position'] == 'Top':
+                    top=p['neighbour']
+                if p['position'] == 'Bottom':
+                    bottom=p['neighbour']
+                if p['position'] == 'Left':
+                    left=p['neighbour']
+                if p['position'] == 'Right':
+                    right=p['neighbour']                         
+        if winx < cScreen['X']:
+            if left==None:
+                speed_x = speed_x * -1
+            else:
+                cScreen = get_dict_by_id(screens, left)
+                cScreen_changed = True
+                break
+        if winx + frame_width > cScreen['Width']:
+            if right==None:
+                speed_x = speed_x * -1
+            else:
+                cScreen = get_dict_by_id(screens, right)
+                cScreen_changed = True
+                break
+        if winy < cScreen['Y']:
+            if top==None:
+                speed_y = speed_y * -1
+            else:
+                cScreen = get_dict_by_id(screens, top)
+                cScreen_changed = True
+                break
+        if winy + frame_height > cScreen['Height']:
+            if bottom==None:
+                speed_y = speed_y * -1
+            else:
+                cScreen = get_dict_by_id(screens, bottom)
+                cScreen_changed = True
+                break
         nx = winx + speed_x * rtick
         ny = winy + speed_y * rtick
         winx = int(nx)
@@ -154,45 +214,51 @@ def mouse_listener():
     with mouse.Listener(on_move=on_mouse_event) as listener:
         listener.join()
 
-
 try:
-    # Create and start the keypress and mouse listener threads
-    keyboard_listenerO = keyboard.Listener(on_press=on_key_event)
-    mouse_listenerO = mouse.Listener(on_move=on_mouse_event)
-    keyboard_thread = threading.Thread(target=keyboard_listenerO.start)
-    mouse_thread = threading.Thread(target=mouse_listenerO.start)
-    keyboard_thread.start()
-    mouse_thread.start()
+    if __name__ == "__main__":
+        # Create and start the keypress and mouse listener threads
+        keyboard_listenerO = keyboard.Listener(on_press=on_key_event)
+        mouse_listenerO = mouse.Listener(on_move=on_mouse_event)
+        keyboard_thread = threading.Thread(target=keyboard_listenerO.start)
+        mouse_thread = threading.Thread(target=mouse_listenerO.start)
+        keyboard_thread.start()
+        mouse_thread.start()
 
-    # Main program code
-    while not terminate_event.is_set():
-        screenOn()
-        mywin = webview.create_window('ZoneMinder', authenticated_url, x=winx, y=winy, 
-                                    width=frame_width, height=frame_height, draggable=True)
-        webview.start(destroy, (mywin, seconds_on))
-        if terminate_event.is_set():
+        # Main program code
+        while not terminate_event.is_set():
+            if cScreen_changed:                
+                print(f"cScreen = {cScreen}")
+                print(f"webview screen = {webview.screens[cScreen['id']]}")
             screenOn()
-            break
-        
-        screenOff()
-        for _ in range(seconds_off*tick):
+            mywin = webview.create_window('ZoneMinder', authenticated_url, x=winx, y=winy, 
+                                        width=frame_width, height=frame_height,
+                                        screen=webview.screens[cScreen['id']],
+                                        frameless=True, draggable=True)
+            webview.start(destroy, (mywin, seconds_on))
             if terminate_event.is_set():
                 screenOn()
                 break
-            time.sleep(rtick)    
+            
+            screenOff()
+            for _ in range(seconds_off*tick):
+                if terminate_event.is_set():
+                    screenOn()
+                    break
+                time.sleep(rtick)    
 
-    # Stop the listeners if the program is terminating
-    keyboard_listenerO.stop()
-    mouse_listenerO.stop()
+        # Stop the listeners if the program is terminating
+        keyboard_listenerO.stop()
+        mouse_listenerO.stop()
 
-    # Wait for the threads to finish
-    keyboard_thread.join()
-    mouse_thread.join()
-    # if adding threads, then join them here.
+        # Wait for the threads to finish
+        keyboard_thread.join()
+        mouse_thread.join()
+        # if adding threads, then join them here.
 
-    # end.
+        # end.
 except Exception as e:
     print(f"Error: {e}")
+    print(sys.exc_info()[0])
     sys.exit(1)
 else:
     sys.exit(0)

@@ -29,15 +29,44 @@ MIT (Open Source, Free)
   frame_height: 1000
   screenoff_enabled: False
   speed_x: 90
-  speed_y: 60
+  speed_y: 60  
 ```
+
 ## Config file name and location
-There should a text file named "config-url-monitor-saver.yml" in the folder the python, executable, or .scr file is installed/saved. The contents of this Yaml file can be like the one shown in sampkle above.
+There should a text file named "config-url-monitor-saver.yml" in the folder the python, executable, or .scr file is installed/saved. The
+contents of this Yaml file can be like the one shown in sample above.
+
+## Config file - Explanation
+This is a Yaml file. YAML is a simple text based file, which uses indentation, '-', and arbitrary names to describe data configuration
+properties. A quick tutorial on YAML syntax is [here](https://www.cloudbees.com/blog/yaml-tutorial-everything-you-need-get-started).
   
+Following is an explanation of each field:
+* domain: The Zoneminder website Domain Name. 
+* secret_key: The Secret key used in Zoneminder -\> Options -\> System -\> AUTH_HASH_SECRET
+* username: A Zoneminder user name, created specifically for this screen saver
+* password_hash: Password Hash of the above username, as extracted from Zoneminder Database (MySql) table 'Users'. More information on
+this at this [page](https://techbit.ca/2018/11/logging-into-zoneminder-using-an-authentication-hash/#finding-the-password-hash).
+  ```
+  mysql> use zm;
+  mysql> select Username,Password from zm.Users where Username = '\<\<USERNAME\>\>';
+  ```
+* seconds_off: Time in seconds, the Window (or Window and Screen) remain OFF.
+* seconds_on: Time in seconds, the Window (or Window and Screen) remain ON.
+* frame_width: Window Width in pixels.
+* frame_height: Window Height in pixels.
+* screenoff_enabled: True or False. Specifies if Screen or Monitor is to be turned OFF or not. If it is false, then only the
+Window will be hidden during "seconds_off" time period. This option does not work as expected when using .scr file, only works when
+using .exe or .py file.
+* speed_x: Integer. Speed of Window movement in X-Axis. Default is 90.
+* speed_y: Integer. Speed of Window movement in Y-Axis. Default is 60.
+* screens: Optional. A YAML List. Specifies the number of Physical monitors used in your system.
+
 ## Pre-requisites
 Python3 should be installed. Then you will also need to install the following using pip:
 - pip install pyyaml, pywin32
 - pip install pywebview, pynput
+Zoneminder settings should be set as described in this site:
+- [https://techbit.ca/2018/11/logging-into-zoneminder-using-an-authentication-hash/#configuring-zoneminder-to-allow-logins-via-authentication-hash](https://techbit.ca/2018/11/logging-into-zoneminder-using-an-authentication-hash/#configuring-zoneminder-to-allow-logins-via-authentication-hash)
 
 ## Use PyInstaller to Make EXE
 PyInstaller Link: [https://pyinstaller.org/en/stable/operating-mode.html](https://pyinstaller.org/en/stable/operating-mode.html)
