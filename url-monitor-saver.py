@@ -1,20 +1,31 @@
 #!/usr/bin/python3
 # https://pyinstaller.org/en/stable/spec-files.html#using-spec-files
 ## Install
-# - pip install pyyaml, pywin32
+# - pip install pyyaml
 # - pip install pywebview, pynput
+# - ON Windows:
+#   - pip install pywin32
+# - ON Posix/Linux:
+#   - pip install evdev
 #
 import threading
 from pynput import keyboard, mouse
 import time
 import os
+import subprocess
 import sys
 import yaml
 import hashlib
-import win32con
-import win32api
 import ctypes
 import webview
+if os.name == 'nt':
+    import win32con
+    import win32api
+#if os.uname().sysname == "Linux":    
+if os.name == 'posix':
+    from evdev import UInput, ecodes as e
+#if os.uname().sysname == "Darwin":
+#    pass
 
 config_file_name = 'config-url-monitor-saver.yml'
 # determine if application is a script file or frozen exe
@@ -49,7 +60,7 @@ Sample YAML file contents:
   seconds_on: 8
   frame_width: 1024
   frame_height: 1000
-  screenoff_enabled: False                                                     
+  screenoff_enabled: False
 '''
 
 config={}
@@ -122,14 +133,28 @@ def generate_auth_hash(use_remote_addr, uname=username, pwd_hash=password_hash, 
 
 def screenOff():
     if screenoff_enabled:
-        ctypes.windll.user32.SendMessageW(65535, 274, 61808, 2)
+        if os.name == 'nt':
+            ctypes.windll.user32.SendMessageW(65535, 274, 61808, 2)
+        else:
+            subprocess.run(["xset", "-display", ":0.0", "dpms", "force", "off"])
 def screenOn():
     if screenoff_enabled:
-        ctypes.windll.user32.SendMessageW(65535, 274, 61808, -1)
-        moveCursor()
+        if os.name == 'nt':
+            ctypes.windll.user32.SendMessageW(65535, 274, 61808, -1)
+            moveCursor()
+        else:
+            subprocess.run(["xset", "dpms", "force", "on"])
+            time.sleep(1)
+            # Simulate key press
+            with UInput() as ui:
+                ui.write(e.EV_KEY, e.KEY_ESCAPE, 1)  # Key down
+                ui.write(e.EV_KEY, e.KEY_ESCAPE, 0)  # Key up
+                ui.syn()            
+
 def moveCursor():
-    x, y = (0,0)
-    win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, x, y)
+    if os.name == 'nt':
+        x, y = (0,0)
+        win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, x, y)
 
 # Generate the URL with Authentication for Display
 authenticated_url = base_url+generate_auth_hash(False)
