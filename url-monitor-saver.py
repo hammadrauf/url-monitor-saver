@@ -18,6 +18,7 @@ import yaml
 import hashlib
 import ctypes
 import webview
+import logging
 if os.name == 'nt':
     import win32con
     import win32api
@@ -26,6 +27,10 @@ if os.name == 'posix':
     from evdev import UInput, ecodes as e
 #if os.uname().sysname == "Darwin":
 #    pass
+
+logging.basicConfig(level=logging.INFO)
+logging.debug('url-monitor-saver screen saver - Logger started!')
+logger = logging.getLogger(__name__)
 
 config_file_name = 'config-url-monitor-saver.yml'
 # determine if application is a script file or frozen exe
@@ -70,18 +75,20 @@ try:
             config=yaml.safe_load(stream)
             #print(f"config data = {config['screens']}")
         except yaml.YAMLError as exc:
-            print(exc)
+            #print(exc)
+            logger.error(exc)
 except:
-    print(f"Config file not found at location: {config_file_path}")
+    #print(f"Config file not found at location: {config_file_path}")
+    logger.error(f"Config file not found at location: {config_file_path}")
     sys.exit(1)
 
 # Function to get the dictionary with the given 'id'
 def get_dict_by_id(data, n):
     return next((item for item in data if item["id"] == n), None)
 
-print(f"Webview screens = {webview.screens}")
+logger.debug(f"Webview screens = {webview.screens}")
 for s in webview.screens:
-    print(f"Webview frames = {s.frame}")
+    logger.debug(f"Webview frames = {s.frame}")
 domain=config['domain']
 #base_url = f"https://{domain}/index.php?view=watch&mid=1&auth="
 base_url=f"https://{domain}/index.php?view=montage&group=1&scale=0.5&auth="
@@ -95,12 +102,14 @@ frame_height = config['frame_height']
 screenoff_enabled = config['screenoff_enabled']
 speed_x = config['speed_x']
 speed_y = config['speed_y']
+start_screen_id = config['start_screen_id']
+use_one_screen = config['use_one_screen']
 screens = []
 screens.append( { 'id' : 0, 'X': 0, 'Y': 0, 'Width': 1920, 'Height': 1032 } )
 if config['screens']:
     screens = config['screens']
-print(f"screens = {screens}")
-cScreen = get_dict_by_id(screens, 1)   # Current Screen, default is None, for the Default screen.
+logger.debug(f"screens = {screens}")
+cScreen = get_dict_by_id(screens, start_screen_id)   # Current Screen, default is None, for the Default screen.
 cScreen_changed = True
 
 #Frame starting position
@@ -165,10 +174,10 @@ terminate_event = threading.Event()
 def destroy(window, timeInSec):
     global speed_x, speed_y, winx, winy, rtick, tick, cScreen, screens, cScreen_changed
     cScreen_changed = True
-    # top=None
-    # bottom=None
-    # right=None
-    # left=None
+    top=None
+    bottom=None
+    right=None
+    left=None
     for _ in range(timeInSec*tick):
         time.sleep(rtick)
         if terminate_event.is_set():
@@ -179,51 +188,58 @@ def destroy(window, timeInSec):
             bottom=None
             right=None
             left=None
-            for p in cScreen['placements']:
-                if p['position'] == 'Top':
-                    top=p['neighbour']
-                if p['position'] == 'Bottom':
-                    bottom=p['neighbour']
-                if p['position'] == 'Left':
-                    left=p['neighbour']
-                if p['position'] == 'Right':
-                    right=p['neighbour']                         
-        if winx < cScreen['X']:
-            if left==None:
+            if not use_one_screen:
+                for p in cScreen['placements']:
+                    if p['position'] == 'Top':
+                        top=p['neighbour']
+                    if p['position'] == 'Bottom':
+                        bottom=p['neighbour']
+                    if p['position'] == 'Left':
+                        left=p['neighbour']
+                    if p['position'] == 'Right':
+                        right=p['neighbour']                         
+        if winx + speed_x < cScreen['X']:
+            if left==None or use_one_screen: 
                 speed_x = speed_x * -1
             else:
-                if winx + frame_width < cScreen['X']:
+                if winx + speed_x + frame_width < cScreen['X']:
                     cScreen = get_dict_by_id(screens, left)
                     cScreen_changed = True
                     break
-        if winx + frame_width > cScreen['X']+cScreen['Width']:
-            if right==None:
+        if winx + speed_x + frame_width > cScreen['X']+cScreen['Width']:
+            if right==None or use_one_screen:
                 speed_x = speed_x * -1
             else:
-                if winx > cScreen['X']+cScreen['Width']:
+                if winx + speed_x > cScreen['X']+cScreen['Width']:
                     cScreen = get_dict_by_id(screens, right)
                     cScreen_changed = True
                     break
-        if winy < cScreen['Y']:
-            if top==None:
+        if winy + speed_y < cScreen['Y']:
+            if top==None or use_one_screen:
                 speed_y = speed_y * -1
             else:
-                if winy + frame_height < cScreen['Y']:
+                if winy + speed_y + frame_height < cScreen['Y']:
                     cScreen = get_dict_by_id(screens, top)
                     cScreen_changed = True
                     break
-        if winy + frame_height > cScreen['Y']+cScreen['Height']:
-            if bottom==None:
+        if winy + speed_y + frame_height > cScreen['Y']+cScreen['Height']:
+            if bottom==None or use_one_screen:
                 speed_y = speed_y * -1
             else:
-                if winy > cScreen['Y']+cScreen['Height']:
+                if winy + speed_y > cScreen['Y']+cScreen['Height']:
                     cScreen = get_dict_by_id(screens, bottom)
                     cScreen_changed = True
                     break
-        nx = winx + speed_x * rtick
-        ny = winy + speed_y * rtick
-        winx = int(nx)
-        winy = int(ny)
+        nx = winx + speed_x
+        ny = winy + speed_y
+        winx = nx
+        winy = ny
+        if use_one_screen:
+            if winx < cScreen['X'] or winy < cScreen['Y'] or winx > cScreen['X']+cScreen['Width'] or winy > cScreen['Y']+cScreen['Height']:
+                logger.debug(f'\n===> winx = {winx}, winy = {winy}. nx = {nx}, ny = {ny}, speed_x = {speed_x}, speed_y = {speed_y}')
+                logger.debug(f'   > lower-right("{winx+frame_width-1}","{winy+frame_height-1}")')
+            else:
+                logger.debug('.',end='')
         window.move(winx, winy)  
     window.destroy()
 
@@ -256,8 +272,8 @@ try:
         # Main program code
         while not terminate_event.is_set():
             if cScreen_changed:                
-                print(f"cScreen = {cScreen}")
-                print(f"webview screen = {webview.screens[cScreen['id']]}")
+                logger.debug(f"cScreen = {cScreen}")
+                logger.debug(f"webview screen = {webview.screens[cScreen['id']]}")
             screenOn()
             mywin = webview.create_window('ZoneMinder', authenticated_url, x=winx, y=winy, 
                                         width=frame_width, height=frame_height,
@@ -286,8 +302,8 @@ try:
 
         # end.
 except Exception as e:
-    print(f"Error: {e}")
-    print(sys.exc_info()[0])
+    logger.error(f"Error: {e}")
+    logger.error(sys.exc_info()[0])
     sys.exit(1)
 else:
     sys.exit(0)

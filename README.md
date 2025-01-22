@@ -72,7 +72,7 @@ Zoneminder settings should be set as described in this site:
 PyInstaller Link: [https://pyinstaller.org/en/stable/operating-mode.html](https://pyinstaller.org/en/stable/operating-mode.html)
 ```
 pip install pyinstaller
-pyintaller --onefile --windowed url-monitor-saver.py
+pyinstaller --onefile --windowed url-monitor-saver.py
 ```
 
 ## Convert to Screen Saver
