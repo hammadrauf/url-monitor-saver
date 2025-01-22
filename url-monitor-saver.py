@@ -100,7 +100,7 @@ screens.append( { 'id' : 0, 'X': 0, 'Y': 0, 'Width': 1920, 'Height': 1032 } )
 if config['screens']:
     screens = config['screens']
 print(f"screens = {screens}")
-cScreen = get_dict_by_id(screens, 0)   # Current Screen, default is None, for the Default screen.
+cScreen = get_dict_by_id(screens, 1)   # Current Screen, default is None, for the Default screen.
 cScreen_changed = True
 
 #Frame starting position
@@ -192,30 +192,34 @@ def destroy(window, timeInSec):
             if left==None:
                 speed_x = speed_x * -1
             else:
-                cScreen = get_dict_by_id(screens, left)
-                cScreen_changed = True
-                break
-        if winx + frame_width > cScreen['Width']:
+                if winx + frame_width < cScreen['X']:
+                    cScreen = get_dict_by_id(screens, left)
+                    cScreen_changed = True
+                    break
+        if winx + frame_width > cScreen['X']+cScreen['Width']:
             if right==None:
                 speed_x = speed_x * -1
             else:
-                cScreen = get_dict_by_id(screens, right)
-                cScreen_changed = True
-                break
+                if winx > cScreen['X']+cScreen['Width']:
+                    cScreen = get_dict_by_id(screens, right)
+                    cScreen_changed = True
+                    break
         if winy < cScreen['Y']:
             if top==None:
                 speed_y = speed_y * -1
             else:
-                cScreen = get_dict_by_id(screens, top)
-                cScreen_changed = True
-                break
-        if winy + frame_height > cScreen['Height']:
+                if winy + frame_height < cScreen['Y']:
+                    cScreen = get_dict_by_id(screens, top)
+                    cScreen_changed = True
+                    break
+        if winy + frame_height > cScreen['Y']+cScreen['Height']:
             if bottom==None:
                 speed_y = speed_y * -1
             else:
-                cScreen = get_dict_by_id(screens, bottom)
-                cScreen_changed = True
-                break
+                if winy > cScreen['Y']+cScreen['Height']:
+                    cScreen = get_dict_by_id(screens, bottom)
+                    cScreen_changed = True
+                    break
         nx = winx + speed_x * rtick
         ny = winy + speed_y * rtick
         winx = int(nx)
