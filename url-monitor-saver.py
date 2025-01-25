@@ -141,6 +141,12 @@ cScreen_changed = True
 winx = cScreen['X']
 winy = cScreen['Y']
 
+authenticated_url = None
+
+# Event to control the main loop and listeners
+terminate_event = threading.Event()
+
+
 def generate_auth_hash(use_remote_addr, uname=username, pwd_hash=password_hash, remote_address=domain, zm_auth_secret=secret_key):
     current_time = time.localtime()
     #print(f'User Name: {uname}')
@@ -190,15 +196,6 @@ def moveCursor():
         x, y = (0,0)
         win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, x, y)
 
-# Generate the URL with Authentication for Display
-authenticated_url = None
-if use_zoneminder_domain:
-    authenticated_url = base_url+generate_auth_hash(False)
-else:
-    authenticated_url = o_url
-
-# Event to control the main loop and listeners
-terminate_event = threading.Event()
 
 def destroy(window, timeInSec):
     global speed_x, speed_y, winx, winy, rtick, tick, cScreen, screens, cScreen_changed
@@ -304,6 +301,14 @@ try:
 
         # Main program code
         while not terminate_event.is_set():
+
+            # Generate the URL with Authentication for Display
+            #   This is inside a loop because Zoneminer Auth Hash expires by default after 2 hours. This way it gets regenerated.
+            if use_zoneminder_domain:
+                authenticated_url = base_url+generate_auth_hash(False)
+            else:
+                authenticated_url = o_url
+
             if cScreen_changed:                
                 logger.debug(f"cScreen = {cScreen}")
                 logger.debug(f"webview screen = {webview.screens[cScreen['id']]}")
