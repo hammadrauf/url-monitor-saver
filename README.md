@@ -23,6 +23,8 @@ MIT (Open Source, Free)
   secret_key: "SomeRandomSecretKey-FromZoneMinder-Options"
   username: "SomeUserName"
   password_hash: "PasswordHash-From-MySQLDB-table-zoneminder"
+  use_zoneminder_domain: False
+  o_url: "https://www.earthcam.com/world/canada/toronto/cntower/?cam=cntower2"  
   seconds_off: 23
   seconds_on: 120
   frame_width: 850
@@ -76,8 +78,8 @@ this at this [page](https://techbit.ca/2018/11/logging-into-zoneminder-using-an-
 * screenoff_enabled: True or False. Specifies if Screen or Monitor is to be turned OFF or not. If it is false, then only the
 Window will be hidden during "seconds_off" time period. This option does not work as expected when using .scr file, only works when
 using .exe or .py file.
-* speed_x: Integer. Speed of Window movement in X-Axis. Default is 90.
-* speed_y: Integer. Speed of Window movement in Y-Axis. Default is 60.
+* speed_x: Integer. Speed of Window movement in X-Axis. Standard value is 3.
+* speed_y: Integer. Speed of Window movement in Y-Axis. Standard value is 3.
 * screens: Optional. A YAML List. Specifies the number of Physical monitors used in your system.
 
 ## Pre-requisites

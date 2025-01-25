@@ -61,11 +61,34 @@ Sample YAML file contents:
   secret_key: "SomeRandomSecretKey-FromZoneMinder-Options"
   username: "SomeUserName"
   password_hash: "PasswordHash-From-MySQLDB-table-zoneminder"
-  seconds_off: 5
-  seconds_on: 8
-  frame_width: 1024
-  frame_height: 1000
+  use_zoneminder_domain: False
+  o_url: "https://www.earthcam.com/world/canada/toronto/cntower/?cam=cntower2"  
+  seconds_off: 23
+  seconds_on: 120
+  frame_width: 850
+  frame_height: 850
   screenoff_enabled: False
+  speed_x: 3
+  speed_y: 3
+  use_one_screen: False
+  start_screen_id: 0
+  screens:
+    - id: 0
+      X: 0
+      Y: 0
+      Width: 1920
+      Height: 1080
+      placements:
+        - neighbour: 1
+          position: "Left"
+    - id: 1
+      X: -1920
+      Y: 0
+      Width: 1920
+      Height: 1080    
+      placements:
+        - neighbour: 0
+          position: "Right"
 '''
 
 config={}
@@ -95,6 +118,8 @@ base_url=f"https://{domain}/index.php?view=montage&group=1&scale=0.5&auth="
 secret_key = config['secret_key']
 username = config['username']
 password_hash = config['password_hash']
+use_zoneminder_domain = config['use_zoneminder_domain']
+o_url = config['o_url']
 seconds_off = config['seconds_off']
 seconds_on = config['seconds_on']
 frame_width = config['frame_width']
@@ -166,7 +191,11 @@ def moveCursor():
         win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, x, y)
 
 # Generate the URL with Authentication for Display
-authenticated_url = base_url+generate_auth_hash(False)
+authenticated_url = None
+if use_zoneminder_domain:
+    authenticated_url = base_url+generate_auth_hash(False)
+else:
+    authenticated_url = o_url
 
 # Event to control the main loop and listeners
 terminate_event = threading.Event()
@@ -279,7 +308,7 @@ try:
                 logger.debug(f"cScreen = {cScreen}")
                 logger.debug(f"webview screen = {webview.screens[cScreen['id']]}")
             screenOn()
-            mywin = webview.create_window('ZoneMinder', authenticated_url, x=winx, y=winy, 
+            mywin = webview.create_window('URL Monitor Saver', authenticated_url, x=winx, y=winy, 
                                         width=frame_width, height=frame_height,
                                         screen=webview.screens[cScreen['id']],
                                         frameless=True, draggable=True)
