@@ -23,13 +23,32 @@ MIT (Open Source, Free)
   secret_key: "SomeRandomSecretKey-FromZoneMinder-Options"
   username: "SomeUserName"
   password_hash: "PasswordHash-From-MySQLDB-table-zoneminder"
-  seconds_off: 5
-  seconds_on: 8
-  frame_width: 1024
-  frame_height: 1000
+  seconds_off: 23
+  seconds_on: 120
+  frame_width: 850
+  frame_height: 850
   screenoff_enabled: False
-  speed_x: 90
-  speed_y: 60  
+  speed_x: 3
+  speed_y: 3
+  use_one_screen: False
+  start_screen_id: 0
+  screens:
+    - id: 0
+      X: 0
+      Y: 0
+      Width: 1920
+      Height: 1080
+      placements:
+        - neighbour: 1
+          position: "Left"
+    - id: 1
+      X: -1920
+      Y: 0
+      Width: 1920
+      Height: 1080    
+      placements:
+        - neighbour: 0
+          position: "Right"
 ```
 
 ## Config file name and location

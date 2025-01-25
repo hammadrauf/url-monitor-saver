@@ -203,9 +203,13 @@ def destroy(window, timeInSec):
                 speed_x = speed_x * -1
             else:
                 if winx + speed_x + frame_width < cScreen['X']:
-                    cScreen = get_dict_by_id(screens, left)
-                    cScreen_changed = True
-                    break
+                    nextScreen = get_dict_by_id(screens, left)
+                    if winx + speed_x + frame_height + speed_y > nextScreen['Y']:
+                        speed_y = speed_y * -1
+                    else:
+                        cScreen = get_dict_by_id(screens, left)
+                        cScreen_changed = True
+                        break
         if winx + speed_x + frame_width > cScreen['X']+cScreen['Width']:
             if right==None or use_one_screen:
                 speed_x = speed_x * -1
