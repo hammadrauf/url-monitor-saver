@@ -90,7 +90,7 @@ using .exe or .py file.
 * screens: Optional. A YAML List. Specifies the number of Physical monitors used in your system, along with their dimensions in Pixels. Please see the sample/shadow config file and customize it according to your setup. More on this in next section.
 
 ### Screens - Configuraion
-![Image 3 Monitor Setup Example](https://github.com/hammadrauf/url-monitor-saver/images/Test_Setup_-_Screens_and_Relative_sizes.png)
+![Image 3 Monitor Setup Example](https://github.com/hammadrauf/url-monitor-saver/blob/main/images/Test_Setup_-_Screens_and_Relative_sizes.png?raw=true)
 In the above Image 3 monitor setup is shown that was used in Testing this software. The corresponding "screens" YAML config is shown below.
 ```
 .... << Other Configuration - Redacted >>
