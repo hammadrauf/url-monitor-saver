@@ -4,12 +4,14 @@ and turning back on again. The URL and intervals for Screen-ON and Screen-Off ar
 given in as YAML text config file. This YAML file should be in the same folder as the executable
 file.
   
+Works with any URL or ZomeNinder URL with Authentication Hash.
+  
 ZoneMinder article: [https://techbit.ca/2018/11/logging-into-zoneminder-using-an-authentication-hash/](https://techbit.ca/2018/11/logging-into-zoneminder-using-an-authentication-hash/)
   
 screen_Off function is only for Windows based computers.
 
 ## Author
-Hammad Rauf (rauf.hammad@gmail.com)
+Hammad Rauf, :canada:, :pakisatn:
 
 ## Article
 Article about this monitor-saver: [https://andromedabay.ddns.net/zoneminder-screen-saver/](https://andromedabay.ddns.net/zoneminder-screen-saver/)
@@ -18,6 +20,7 @@ MIT (Open Source, Free)
 
 ## Sample Config (YAML) file contents
 ```
+# Configuration Items are explained in README.md below.
 ---
   domain: "zoneminder.xyz.com"
   secret_key: "SomeRandomSecretKey-FromZoneMinder-Options"
@@ -62,7 +65,7 @@ This is a Yaml file. YAML is a simple text based file, which uses indentation, '
 properties. A quick tutorial on YAML syntax is [here](https://www.cloudbees.com/blog/yaml-tutorial-everything-you-need-get-started).
   
 Following is an explanation of each field:
-* domain: The Zoneminder website Domain Name. 
+* domain: The private Zoneminder website Domain Name. For ordinary URLs use (use_zoneminder_domain: False, and o_url='https://xyz.com')
 * secret_key: The Secret key used in Zoneminder -\> Options -\> System -\> AUTH_HASH_SECRET
 * username: A Zoneminder user name, created specifically for this screen saver
 * password_hash: Password Hash of the above username, as extracted from Zoneminder Database (MySql) table 'Users'. More information on
@@ -71,6 +74,8 @@ this at this [page](https://techbit.ca/2018/11/logging-into-zoneminder-using-an-
   mysql> use zm;
   mysql> select Username,Password from zm.Users where Username = '\<\<USERNAME\>\>';
   ```
+* use_zoneminder_domain: True or False. Specifies if private Zoneminder fields are to be used or o_url should be used. 
+* o_url:  A custom URL string to be shown in the screen saver if 'use_zoneminder_domain' is False.
 * seconds_off: Time in seconds, the Window (or Window and Screen) remain OFF.
 * seconds_on: Time in seconds, the Window (or Window and Screen) remain ON.
 * frame_width: Window Width in pixels.
@@ -80,7 +85,43 @@ Window will be hidden during "seconds_off" time period. This option does not wor
 using .exe or .py file.
 * speed_x: Integer. Speed of Window movement in X-Axis. Standard value is 3.
 * speed_y: Integer. Speed of Window movement in Y-Axis. Standard value is 3.
-* screens: Optional. A YAML List. Specifies the number of Physical monitors used in your system.
+* use_one_screen: True or False. On a multiscreen computer system, specifiy if only 1 screen should show the Screen Saver Window.
+* start_screen_id: Integer from 0 to N-1, where N is the number of Monitors in your computer system. Screen saver window will appear on this Monitor id. The Screen Id refers to Ids in 'screens' YAML structure.
+* screens: Optional. A YAML List. Specifies the number of Physical monitors used in your system, along with their dimensions in Pixels. Please see the sample/shadow config file and customize it according to your setup. More on this in next section.
+
+### Screens - Configuraion
+![Image 3 Monitor Setup Example](https://github.com/hammadrauf/url-monitor-saver/images/Test_Setup_-_Screens_and_Relative_sizes.png)
+In the above Image 3 monitor setup is shown that was used in Testing this software. The corresponding "screens" YAML config is shown below.
+```
+.... << Other Configuration - Redacted >>
+  screens:
+    - id: 0
+      X: 0
+      Y: 0
+      Width: 1920
+      Height: 1080
+      placements:
+        - neighbour: 1
+          position: "Left"
+        - neighbour: 2
+          position: "Bottom"
+    - id: 1
+      X: -1920
+      Y: 0
+      Width: 1920
+      Height: 1080    
+      placements:
+        - neighbour: 0
+          position: "Right"
+    - id: 2
+      X: 0
+      Y: 1080
+      Width: 1440
+      Height: 900    
+      placements:
+        - neighbour: 0
+          position: "Top"
+```
 
 ## Pre-requisites
 Python3 should be installed. Then you will also need to install the following using pip:
