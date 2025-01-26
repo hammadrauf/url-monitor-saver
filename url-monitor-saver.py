@@ -438,6 +438,7 @@ try:
 except Exception as e:
     logger.error(f"Error: {e}")
     logger.error(sys.exc_info()[0])
+    show_pointer()
     sys.exit(1)
 else:
     sys.exit(0)
