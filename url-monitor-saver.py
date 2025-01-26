@@ -19,13 +19,45 @@ import hashlib
 import ctypes
 import webview
 import logging
+
 if os.name == 'nt':
     import win32con
     import win32api
+    from ctypes import wintypes
+    # Constants
+    OCR_NORMAL = 32512
+    SPI_SETCURSORS = 0x0057
+    SPIF_UPDATEINIFILE = 0x01
+    SPIF_SENDCHANGE = 0x02
+    # Load required DLLs
+    user32 = ctypes.windll.user32    
+    # Function prototypes
+    user32.GetCursorPos.argtypes = [ctypes.POINTER(wintypes.POINT)]
+    user32.SetSystemCursor.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+    user32.SetSystemCursor.restype = ctypes.c_bool
+    user32.CopyIcon.argtypes = [ctypes.c_void_p]
+    user32.CopyIcon.restype = ctypes.c_void_p
+    user32.LoadCursorW.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    user32.LoadCursorW.restype = ctypes.c_void_p
+    user32.SystemParametersInfoW.argtypes = [ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p, ctypes.c_uint]
+    user32.SystemParametersInfoW.restype = ctypes.c_bool
+
 #if os.uname().sysname == "Linux":    
 if os.name == 'posix':
     from evdev import UInput, ecodes as e
-#if os.uname().sysname == "Darwin":
+    from ctypes.util import find_library
+    x11 = None
+    xfixes = None
+    d = None
+    if 'WAYLAND_DISPLAY' in os.environ:
+        wayland = True
+    else:
+        x11 = ctypes.cdll.LoadLibrary(find_library('X11'))
+        xfixes = ctypes.cdll.LoadLibrary(find_library('Xfixes'))
+        d = x11.XOpenDisplay(None)
+        wayland = False    
+
+# if os.uname().sysname == "Darwin":
 #    pass
 
 logging.basicConfig(level=logging.INFO)
@@ -275,10 +307,12 @@ def destroy(window, timeInSec):
 
 def on_key_event(key):
     terminate_event.set()
+    show_pointer()  # Show pointer when screen saver is terminated
     return False
 
 def on_mouse_event(x, y):
     terminate_event.set()
+    show_pointer()  # Show pointer when screen saver is terminated
     return False
 
 def keypress_listener():
@@ -289,8 +323,69 @@ def mouse_listener():
     with mouse.Listener(on_move=on_mouse_event) as listener:
         listener.join()
 
+def create_invisible_cursor() -> ctypes.c_void_p:
+    #cursor = None
+    if os.name=='nt':
+        # Create a blank cursor using ctypes
+        # ANDmask = ctypes.c_char_p(b'\x00' * 8)
+        # XORmask = ctypes.c_char_p(b'\x00' * 8)
+        # cursor = ctypes.windll.user32.CreateCursor(None, 0, 0, 8, 8, ANDmask, XORmask)
+        and_mask = (ctypes.c_ubyte * 4)(0xFF, 0xFF, 0xFF, 0xFF)
+        xor_mask = (ctypes.c_ubyte * 4)(0, 0, 0, 0)
+        cursor = user32.CreateCursor(None, 0, 0, 1, 1, and_mask, xor_mask)        
+    if os.name == 'posix':
+        black = ctypes.c_ulong(0)
+        pixmap = x11.XCreatePixmap(d, x11.XDefaultRootWindow(d), 1, 1, 1)
+        gc = x11.XCreateGC(d, pixmap, 0, None)
+        x11.XSetForeground(d, gc, black)
+        x11.XFillRectangle(d, pixmap, gc, 0, 0, 1, 1)
+        cursor = x11.XCreatePixmapCursor(d, pixmap, pixmap, ctypes.pointer(black), ctypes.pointer(black), 0, 0)
+        x11.XFreePixmap(d, pixmap)
+        x11.XFreeGC(d, gc)
+    return cursor
+
+original_cusor = None
+invisible_cursor = create_invisible_cursor()
+
+def hide_pointer() -> None:
+    global original_cursor
+    if os.name == 'nt':
+        #ctypes.windll.user32.SetCursor(invisible_cursor)
+        original_cursor = user32.CopyIcon(user32.LoadCursorW(None, OCR_NORMAL))
+        if user32.SetSystemCursor(invisible_cursor, OCR_NORMAL):
+            logger.debug("Cursor hidden")
+        else:
+            logger.debug("Failed to hide cursor")        
+    else:
+        if wayland:
+            print("Wayland detected. Hide System Mouse Pointer - custom handling needed. Not implemented in screen saver.")
+        else:
+            x11.XDefineCursor(d, x11.XDefaultRootWindow(d), invisible_cursor)
+            x11.XFlush(d)
+
+def show_pointer() -> None:
+    global original_cursor
+    if os.name == 'nt':
+        #ctypes.windll.user32.SetCursor(ctypes.windll.user32.LoadCursorW(None, win32con.IDC_ARROW))
+        if original_cursor:
+            if user32.SetSystemCursor(original_cursor, OCR_NORMAL):
+                logger.debug("Cursor restored")
+                # Force a cursor update across all monitors
+                user32.SystemParametersInfoW(SPI_SETCURSORS, 0, None, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE)
+            else:
+                logger.debug("Failed to restore cursor")
+        else:
+            logger.debug("No original cursor to restore")        
+    else:
+        if wayland:
+            print("Wayland detected. Show System Mouse Pointer - custom handling needed. Not implemented in screen saver")
+        else:
+            x11.XUndefineCursor(d, x11.XDefaultRootWindow(d))
+            x11.XFlush(d)
+
 try:
     if __name__ == "__main__":
+        #root = tk.Tk()
         # Create and start the keypress and mouse listener threads
         keyboard_listenerO = keyboard.Listener(on_press=on_key_event)
         mouse_listenerO = mouse.Listener(on_move=on_mouse_event)
@@ -316,7 +411,8 @@ try:
             mywin = webview.create_window('URL Monitor Saver', authenticated_url, x=winx, y=winy, 
                                         width=frame_width, height=frame_height,
                                         screen=webview.screens[cScreen['id']],
-                                        frameless=True, draggable=True)
+                                        frameless=True, draggable=False)
+            hide_pointer()  # Hide mouse-pointer when screen saver is active
             webview.start(destroy, (mywin, seconds_on))
             if terminate_event.is_set():
                 screenOn()

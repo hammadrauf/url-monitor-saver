@@ -11,7 +11,13 @@ ZoneMinder article: [https://techbit.ca/2018/11/logging-into-zoneminder-using-an
 screen_Off function is only for Windows based computers.
 
 ## Author
-Hammad Rauf, :canada:, :pakisatn:
+Hammad Rauf, :canada:, :pakistan:
+
+## Code Re-used Attribution
+* This software borrows some lines of code related to hiding system mouse pointer under Windows operating system from:  
+  - [Pete Richards - windows-cursor-hiding-utility](https://github.com/PRich57/windows-cursor-hiding-utility)
+  Its license text (MIT License) is copied in the [License file](./LICENSE).
+* Thanks to Microsoft Copilot (ChatGPT), for some code structures and for reducing my coding time significantly.
 
 ## Article
 Article about this monitor-saver: [https://andromedabay.ddns.net/zoneminder-screen-saver/](https://andromedabay.ddns.net/zoneminder-screen-saver/)
