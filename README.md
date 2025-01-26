@@ -4,7 +4,7 @@ and turning back on again. The URL and intervals for Screen-ON and Screen-Off ar
 given in as YAML text config file. This YAML file should be in the same folder as the executable
 file.
   
-Works with any URL or ZomeNinder URL with Authentication Hash.
+Works with any URL or ZomeMinder URL with Authentication Hash.
   
 ZoneMinder article: [https://techbit.ca/2018/11/logging-into-zoneminder-using-an-authentication-hash/](https://techbit.ca/2018/11/logging-into-zoneminder-using-an-authentication-hash/)
   
