@@ -32,8 +32,11 @@ MIT (Open Source, Free)
   secret_key: "SomeRandomSecretKey-FromZoneMinder-Options"
   username: "SomeUserName"
   password_hash: "PasswordHash-From-MySQLDB-table-zoneminder"
+  password: "Some-optional-password-for-ZM"
   use_zoneminder_domain: False
-  o_url: "https://www.earthcam.com/world/canada/toronto/cntower/?cam=cntower2"  
+  o_url: "https://www.earthcam.com/world/canada/toronto/cntower/?cam=cntower2"
+  o_username: "user01-optional"
+  o_password: "strong_password-optional"
   seconds_off: 23
   seconds_on: 120
   frame_width: 850
@@ -80,8 +83,11 @@ this at this [page](https://techbit.ca/2018/11/logging-into-zoneminder-using-an-
   mysql> use zm;
   mysql> select Username,Password from zm.Users where Username = '\<\<USERNAME\>\>';
   ```
+* password: Optional password for use with ZoneMinder-Username in Basic Authentication Mode. It over-rides the password_hash if provided.
 * use_zoneminder_domain: True or False. Specifies if private Zoneminder fields are to be used or o_url should be used. 
 * o_url:  A custom URL string to be shown in the screen saver if 'use_zoneminder_domain' is False.
+* o_username: Optional username for use with o_url
+* o_password: Optional password for use with o_url
 * seconds_off: Time in seconds, the Window (or Window and Screen) remain OFF.
 * seconds_on: Time in seconds, the Window (or Window and Screen) remain ON.
 * frame_width: Window Width in pixels.

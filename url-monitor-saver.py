@@ -19,167 +19,14 @@ import hashlib
 import ctypes
 import webview
 import logging
-
-if os.name == 'nt':
-    import win32con
-    import win32api
-    from ctypes import wintypes
-    # Constants
-    OCR_NORMAL = 32512
-    SPI_SETCURSORS = 0x0057
-    SPIF_UPDATEINIFILE = 0x01
-    SPIF_SENDCHANGE = 0x02
-    # Load required DLLs
-    user32 = ctypes.windll.user32    
-    # Function prototypes
-    user32.GetCursorPos.argtypes = [ctypes.POINTER(wintypes.POINT)]
-    user32.SetSystemCursor.argtypes = [ctypes.c_void_p, ctypes.c_uint]
-    user32.SetSystemCursor.restype = ctypes.c_bool
-    user32.CopyIcon.argtypes = [ctypes.c_void_p]
-    user32.CopyIcon.restype = ctypes.c_void_p
-    user32.LoadCursorW.argtypes = [ctypes.c_void_p, ctypes.c_int]
-    user32.LoadCursorW.restype = ctypes.c_void_p
-    user32.SystemParametersInfoW.argtypes = [ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p, ctypes.c_uint]
-    user32.SystemParametersInfoW.restype = ctypes.c_bool
-
-#if os.uname().sysname == "Linux":    
-if os.name == 'posix':
-    from evdev import UInput, ecodes as e
-    from ctypes.util import find_library
-    x11 = None
-    xfixes = None
-    d = None
-    if 'WAYLAND_DISPLAY' in os.environ:
-        wayland = True
-    else:
-        x11 = ctypes.cdll.LoadLibrary(find_library('X11'))
-        xfixes = ctypes.cdll.LoadLibrary(find_library('Xfixes'))
-        d = x11.XOpenDisplay(None)
-        wayland = False    
-
-# if os.uname().sysname == "Darwin":
-#    pass
-
-logging.basicConfig(level=logging.INFO)
-logging.debug('url-monitor-saver screen saver - Logger started!')
-logger = logging.getLogger(__name__)
-
-config_file_name = 'config-url-monitor-saver.yml'
-# determine if application is a script file or frozen exe
-if getattr(sys, 'frozen', False):
-    application_path = os.path.dirname(sys.executable)
-elif __file__:
-    application_path = os.path.dirname(__file__)
-
-config_file_path = os.path.join(application_path, config_file_name)
-
-# tick in milli seconds, multiple of 30. Used in making Frame animation smooth.
-tick=30
-rtick=tick/1000
-
-'''
-Author: Hammad Rauf (rauf.hammad@gmail.com)
-License: MIT (Open Source, Free)
-Description:
-Monitors a URL in Default Browser and Act As a Screen saver turning off monitor frequently
-and turning back on again. The URL and intervals for Screen-ON and Screen-Off are to be
-given in as YAML text config file. This YAML file should be in the same folder as the executable
-file.
-ZoneMinder article: https://techbit.ca/2018/11/logging-into-zoneminder-using-an-authentication-hash/
-screen_Off function is only for Windows based computers.
-Sample YAML file contents:
----
-  domain: "zoneminder.xyz.com"
-  secret_key: "SomeRandomSecretKey-FromZoneMinder-Options"
-  username: "SomeUserName"
-  password_hash: "PasswordHash-From-MySQLDB-table-zoneminder"
-  use_zoneminder_domain: False
-  o_url: "https://www.earthcam.com/world/canada/toronto/cntower/?cam=cntower2"  
-  seconds_off: 23
-  seconds_on: 120
-  frame_width: 850
-  frame_height: 850
-  screenoff_enabled: False
-  speed_x: 3
-  speed_y: 3
-  use_one_screen: False
-  start_screen_id: 0
-  screens:
-    - id: 0
-      X: 0
-      Y: 0
-      Width: 1920
-      Height: 1080
-      placements:
-        - neighbour: 1
-          position: "Left"
-    - id: 1
-      X: -1920
-      Y: 0
-      Width: 1920
-      Height: 1080    
-      placements:
-        - neighbour: 0
-          position: "Right"
-'''
-
-config={}
-try:   
-    with open(config_file_path) as stream:
-        try:
-            config=yaml.safe_load(stream)
-            #print(f"config data = {config['screens']}")
-        except yaml.YAMLError as exc:
-            #print(exc)
-            logger.error(exc)
-except:
-    #print(f"Config file not found at location: {config_file_path}")
-    logger.error(f"Config file not found at location: {config_file_path}")
-    sys.exit(1)
+from urllib.parse import urlparse
+import re
 
 # Function to get the dictionary with the given 'id'
 def get_dict_by_id(data, n):
     return next((item for item in data if item["id"] == n), None)
 
-logger.debug(f"Webview screens = {webview.screens}")
-for s in webview.screens:
-    logger.debug(f"Webview frames = {s.frame}")
-domain=config['domain']
-#base_url = f"https://{domain}/index.php?view=watch&mid=1&auth="
-base_url=f"https://{domain}/index.php?view=montage&group=1&scale=0.5&auth="
-secret_key = config['secret_key']
-username = config['username']
-password_hash = config['password_hash']
-use_zoneminder_domain = config['use_zoneminder_domain']
-o_url = config['o_url']
-seconds_off = config['seconds_off']
-seconds_on = config['seconds_on']
-frame_width = config['frame_width']
-frame_height = config['frame_height']
-screenoff_enabled = config['screenoff_enabled']
-speed_x = config['speed_x']
-speed_y = config['speed_y']
-start_screen_id = config['start_screen_id']
-use_one_screen = config['use_one_screen']
-screens = []
-screens.append( { 'id' : 0, 'X': 0, 'Y': 0, 'Width': 1920, 'Height': 1032 } )
-if config['screens']:
-    screens = config['screens']
-logger.debug(f"screens = {screens}")
-cScreen = get_dict_by_id(screens, start_screen_id)   # Current Screen, default is None, for the Default screen.
-cScreen_changed = True
-
-#Frame starting position
-winx = cScreen['X']
-winy = cScreen['Y']
-
-authenticated_url = None
-
-# Event to control the main loop and listeners
-terminate_event = threading.Event()
-
-
-def generate_auth_hash(use_remote_addr, uname=username, pwd_hash=password_hash, remote_address=domain, zm_auth_secret=secret_key):
+def generate_auth_hash(use_remote_addr, uname, pwd_hash, remote_address, zm_auth_secret):
     current_time = time.localtime()
     #print(f'User Name: {uname}')
     #print(f"time-string is = {format(current_time.tm_hour) + format(current_time.tm_mday) + format(current_time.tm_mon-1) + format(current_time.tm_year-1900)}")
@@ -344,9 +191,6 @@ def create_invisible_cursor() -> ctypes.c_void_p:
         x11.XFreeGC(d, gc)
     return cursor
 
-original_cusor = None
-invisible_cursor = create_invisible_cursor()
-
 def hide_pointer() -> None:
     global original_cursor
     if os.name == 'nt':
@@ -383,6 +227,141 @@ def show_pointer() -> None:
             x11.XUndefineCursor(d, x11.XDefaultRootWindow(d))
             x11.XFlush(d)
 
+def generate_auth_o_url(l_url, l_uname, l_passwd):
+    nurl = None
+    if l_uname:
+        pobject = urlparse(l_url)
+        prefix = f'{pobject.scheme}://'
+        rurl = re.sub(f'^{re.escape(prefix)}', '', l_url) 
+        nurl = f'{prefix}{l_uname}:{l_passwd}@{rurl}'
+    else:
+        nurl = l_url
+    return nurl   
+
+def get_config_value(config, key, default=None):
+    keys = key.split('.')
+    value = config
+    for k in keys:
+        if k in value:
+            value = value[k]
+        else:
+            return default
+    return value
+
+if os.name == 'nt':
+    import win32con
+    import win32api
+    from ctypes import wintypes
+    # Constants
+    OCR_NORMAL = 32512
+    SPI_SETCURSORS = 0x0057
+    SPIF_UPDATEINIFILE = 0x01
+    SPIF_SENDCHANGE = 0x02
+    # Load required DLLs
+    user32 = ctypes.windll.user32    
+    # Function prototypes
+    user32.GetCursorPos.argtypes = [ctypes.POINTER(wintypes.POINT)]
+    user32.SetSystemCursor.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+    user32.SetSystemCursor.restype = ctypes.c_bool
+    user32.CopyIcon.argtypes = [ctypes.c_void_p]
+    user32.CopyIcon.restype = ctypes.c_void_p
+    user32.LoadCursorW.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    user32.LoadCursorW.restype = ctypes.c_void_p
+    user32.SystemParametersInfoW.argtypes = [ctypes.c_uint, ctypes.c_uint, ctypes.c_void_p, ctypes.c_uint]
+    user32.SystemParametersInfoW.restype = ctypes.c_bool
+
+#if os.uname().sysname == "Linux":    
+if os.name == 'posix':
+    from evdev import UInput, ecodes as e
+    from ctypes.util import find_library
+    x11 = None
+    xfixes = None
+    d = None
+    if 'WAYLAND_DISPLAY' in os.environ:
+        wayland = True
+    else:
+        x11 = ctypes.cdll.LoadLibrary(find_library('X11'))
+        xfixes = ctypes.cdll.LoadLibrary(find_library('Xfixes'))
+        d = x11.XOpenDisplay(None)
+        wayland = False    
+# if os.uname().sysname == "Darwin":
+#    pass
+
+logging.basicConfig(level=logging.INFO)
+logging.debug('url-monitor-saver screen saver - Logger started!')
+logger = logging.getLogger(__name__)
+
+config_file_name = 'config-url-monitor-saver.yml'
+# determine if application is a script file or frozen exe
+if getattr(sys, 'frozen', False):
+    application_path = os.path.dirname(sys.executable)
+elif __file__:
+    application_path = os.path.dirname(__file__)
+
+config_file_path = os.path.join(application_path, config_file_name)
+
+# tick in milli seconds, multiple of 30. Used in making Frame animation smooth.
+tick=30
+rtick=tick/1000
+
+config={}
+try:   
+    with open(config_file_path) as stream:
+        try:
+            config=yaml.safe_load(stream)
+            #print(f"config data = {config['screens']}")
+        except yaml.YAMLError as exc:
+            #print(exc)
+            logger.error(exc)
+except:
+    #print(f"Config file not found at location: {config_file_path}")
+    logger.error(f"Config file not found at location: {config_file_path}")
+    sys.exit(1)
+
+logger.debug(f"Webview screens = {webview.screens}")
+for s in webview.screens:
+    logger.debug(f"Webview frames = {s.frame}")
+
+domain = get_config_value(config, "domain")
+base_url = f"https://{domain}/index.php?view=montage&group=1&scale=0.5&auth="
+secret_key = get_config_value(config, "secret_key")
+username = get_config_value(config, "username")
+password_hash=get_config_value(config,"password_hash")
+password=get_config_value(config,"password")
+use_zoneminder_domain=get_config_value(config,"use_zoneminder_domain")
+o_url=get_config_value(config,"o_url")
+o_username=get_config_value(config,"o_username")
+o_password=get_config_value(config,"o_password")
+seconds_off=get_config_value(config,"seconds_off")
+seconds_on=get_config_value(config,"seconds_on")
+frame_width=get_config_value(config,"frame_width")
+frame_height=get_config_value(config,"frame_height")
+screenoff_enabled=get_config_value(config,"screenoff_enabled")
+speed_x=get_config_value(config,"speed_x")
+speed_y=get_config_value(config,"speed_y")
+start_screen_id=get_config_value(config,"start_screen_id")
+use_one_screen=get_config_value(config,"use_one_screen")
+screens = []
+screens.append( { 'id' : 0, 'X': 0, 'Y': 0, 'Width': 1920, 'Height': 1032 } )
+if config['screens']:
+    screens=get_config_value(config,"screens",[])
+
+logger.debug(f"screens = {screens}")
+cScreen = get_dict_by_id(screens, start_screen_id)   # Current Screen, default is None, for the Default screen.
+cScreen_changed = True
+
+#Frame starting position
+winx = cScreen['X']
+winy = cScreen['Y']
+
+authenticated_url = None
+
+# Event to control the main loop and listeners
+terminate_event = threading.Event()
+
+original_cusor = None
+invisible_cursor = create_invisible_cursor()
+
 try:
     if __name__ == "__main__":
         #root = tk.Tk()
@@ -400,9 +379,17 @@ try:
             # Generate the URL with Authentication for Display
             #   This is inside a loop because Zoneminer Auth Hash expires by default after 2 hours. This way it gets regenerated.
             if use_zoneminder_domain:
-                authenticated_url = base_url+generate_auth_hash(False)
+                if password:
+                    suffix='&auth='
+                    base_url = re.sub(f'^{re.escape(suffix)}', '', base_url)
+                    authenticated_url = generate_auth_o_url(base_url, username, password)
+                else:
+                    authenticated_url = base_url+generate_auth_hash(use_remote_addr=False, uname=username,
+                                                                    pwd_hash=password_hash, remote_address=domain, zm_auth_secret=secret_key)
             else:
-                authenticated_url = o_url
+                authenticated_url = generate_auth_o_url(o_url, o_username, o_password)
+
+            logger.debug(f"URL = {authenticated_url}")
 
             if cScreen_changed:                
                 logger.debug(f"cScreen = {cScreen}")

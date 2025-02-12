@@ -4,8 +4,11 @@
   secret_key: "XXX"
   username: "YYY"
   password_hash: "ZZZ"
+  password:
   use_zoneminder_domain: False
   o_url: "https://www.earthcam.com/world/canada/toronto/cntower/?cam=cntower2"  
+  o_username: "user01"
+  o_password: "strong_password"
   seconds_off: 23
   seconds_on: 120
   frame_width: 850
