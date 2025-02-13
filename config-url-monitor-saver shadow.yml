@@ -9,8 +9,8 @@
   o_url: "https://www.earthcam.com/world/canada/toronto/cntower/?cam=cntower2"  
   o_username: "user01"
   o_password: "strong_password"
-  seconds_off: 23
-  seconds_on: 120
+  seconds_off: 12
+  seconds_on: 60
   frame_width: 850
   frame_height: 850
   screenoff_enabled: False

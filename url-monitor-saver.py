@@ -83,7 +83,11 @@ def destroy(window, timeInSec):
     bottom=None
     right=None
     left=None
+    #logger.debug(f' ==> Timing: seconds_on={timeInSec}, tick={tick}, rtick={rtick}, seconds_off={seconds_off}')
+    count_ticks = 0
     for _ in range(timeInSec*tick):
+        count_ticks=count_ticks+1
+        logger.debug(f'Sleep Ticks: {count_ticks}')
         time.sleep(rtick)
         if terminate_event.is_set():
             break           
@@ -114,7 +118,7 @@ def destroy(window, timeInSec):
                     else:
                         cScreen = get_dict_by_id(screens, left)
                         cScreen_changed = True
-                        break
+                        continue
         if winx + speed_x + frame_width > cScreen['X']+cScreen['Width']:
             if right==None or use_one_screen:
                 speed_x = speed_x * -1
@@ -122,7 +126,7 @@ def destroy(window, timeInSec):
                 if winx + speed_x > cScreen['X']+cScreen['Width']:
                     cScreen = get_dict_by_id(screens, right)
                     cScreen_changed = True
-                    break
+                    continue
         if winy + speed_y < cScreen['Y']:
             if top==None or use_one_screen:
                 speed_y = speed_y * -1
@@ -130,7 +134,7 @@ def destroy(window, timeInSec):
                 if winy + speed_y + frame_height < cScreen['Y']:
                     cScreen = get_dict_by_id(screens, top)
                     cScreen_changed = True
-                    break
+                    continue
         if winy + speed_y + frame_height > cScreen['Y']+cScreen['Height']:
             if bottom==None or use_one_screen:
                 speed_y = speed_y * -1
@@ -138,7 +142,7 @@ def destroy(window, timeInSec):
                 if winy + speed_y > cScreen['Y']+cScreen['Height']:
                     cScreen = get_dict_by_id(screens, bottom)
                     cScreen_changed = True
-                    break
+                    continue
         nx = winx + speed_x
         ny = winy + speed_y
         winx = nx
