@@ -363,7 +363,7 @@ authenticated_url = None
 # Event to control the main loop and listeners
 terminate_event = threading.Event()
 
-original_cusor = None
+original_cursor = None
 invisible_cursor = create_invisible_cursor()
 
 try:
